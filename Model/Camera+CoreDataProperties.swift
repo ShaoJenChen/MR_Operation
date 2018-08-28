@@ -21,6 +21,7 @@ extension Camera {
     @NSManaged public var ip: String?
     @NSManaged public var account: String?
     @NSManaged public var password: String?
+    @NSManaged public var index: Int16
     @NSManaged public var host: Host?
 
 }

@@ -7,14 +7,102 @@
 //
 
 import UIKit
+import CoreData
+
+enum DeviceType {
+    case host
+    case camera
+}
+
+class Device {
+    
+    var type: DeviceType
+    
+    var ip: String
+    
+    var index: Int
+    
+    init(type: DeviceType, ip: String, index: Int) {
+        
+        self.type = type
+        
+        self.ip = ip
+        
+        self.index = index
+        
+    }
+    
+    func getDevice() -> NSManagedObject {
+        switch type {
+        case .host:
+            let hosts = MagicalRecordManager.shared.fetchEntitys(entity: Host.self, predicate: NSPredicate(format: "ip == %@", self.ip))
+            let host = hosts.first
+            
+            return host!
+            
+        case .camera:
+            let hosts = MagicalRecordManager.shared.fetchEntitys(entity: Host.self, predicate: NSPredicate(format: "ip == %@", self.ip))
+            
+            let host = hosts.first as! Host
+            
+            let camera = host.cameras![self.index] as! Camera
+            
+            return camera
+        }
+    }
+    
+}
 
 class ViewController: UIViewController {
 
+    var devices = [Device]()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         Camera.truncateAll()
         Host.truncateAll()
         MagicalRecordManager.shared.save()
+        
+        //prepare devices
+        let hosts = MagicalRecordManager.shared.fetchEntitys(entity: Host.self, predicate: nil) as! [Host]
+        
+        for host in hosts {
+            
+            if host.cameras!.count > 1 {
+                
+                let device = Device(type: .host, ip: host.ip!, index: 0)
+                
+                self.devices.append(device)
+                
+                let cameras = host.cameras?.array as! [Camera]
+                
+                for camera in cameras {
+                    
+                    let device = Device(type:.camera, ip: camera.ip!, index: Int(camera.index))
+                    
+                    self.devices.append(device)
+                    
+                }
+                
+            }
+            else {
+                
+                let device = Device(type:.host, ip: host.ip!, index: 0)
+                
+                self.devices.append(device)
+                
+            }
+            
+        }
+        
+        //get device
+        let type = self.devices[0].type
+        switch type{
+        case .camera:
+            let device = self.devices[0].getDevice() as! Camera
+        case .host:
+            let device = self.devices[0].getDevice() as! Host
+        }
     }
 
     override func didReceiveMemoryWarning() {
